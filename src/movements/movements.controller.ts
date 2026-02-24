@@ -33,13 +33,14 @@ export class MovementsController {
     type: ValidationFailedResponseDto,
   })
   @ApiResponse({ status: 400, description: 'Invalid body' })
-  validate(@Body() body: ValidateMovementsDto) {
+  validate(@Body() body: ValidateMovementsDto): AcceptedResponseDto {
     const result = this.movementsService.validate(body);
     if (!result.valid) {
-      throw new HttpException(
-        { message: 'Validation failed', reasons: result.reasons },
-        HttpStatus.UNPROCESSABLE_ENTITY,
-      );
+      const response: ValidationFailedResponseDto = {
+        message: 'Validation failed',
+        reasons: result.reasons,
+      };
+      throw new HttpException(response, HttpStatus.UNPROCESSABLE_ENTITY);
     }
     return { message: 'Accepted' };
   }

@@ -21,9 +21,9 @@ export class MovementDto {
   @IsISO8601()
   date: string;
 
-  @ApiProperty({ description: 'Label', example: 'Transfer' })
+  @ApiProperty({ description: 'Wording', example: 'Transfer' })
   @IsString()
-  label: string;
+  wording: string;
 
   @ApiProperty({ description: 'Amount (€)', example: 100 })
   @IsNumber()

@@ -38,7 +38,7 @@ Une documentation interactive de l’API est disponible via **Scalar** (à parti
 ```json
 {
   "movements": [
-    { "id": 1, "date": "2024-01-10", "label": "Libellé", "amount": 100 }
+    { "id": 1, "date": "2024-01-10", "wording": "Libellé", "amount": 100 }
   ],
   "balances": [{ "date": "2024-01-31", "balance": 100 }]
 }

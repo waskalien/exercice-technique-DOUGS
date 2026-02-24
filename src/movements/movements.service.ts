@@ -1,27 +1,40 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ValidateMovementsDto } from './dto/validate-movements.dto';
-import { ValidationReason, ValidationResult } from './movements.types';
+import { Injectable } from '@nestjs/common';
+import {
+  ValidationReasonDto,
+  ValidationResult,
+} from './dto/validate-movements-response.dto';
+import {
+  BalanceDto,
+  MovementDto,
+  ValidateMovementsDto,
+} from './dto/validate-movements.dto';
 
 @Injectable()
 export class MovementsService {
-  private readonly logger = new Logger(MovementsService.name);
-
   validate(body: ValidateMovementsDto): ValidationResult {
-    const { movements, balances } = body;
+    const reasons: ValidationReasonDto[] = [];
 
-    const reasons: ValidationReason[] = [];
-
-    const ids = movements.map((m) => m.id);
-    const duplicateIds = ids.filter((id, i) => ids.indexOf(id) !== i);
-    const uniqueDuplicateIds = [...new Set(duplicateIds)];
-    if (uniqueDuplicateIds.length > 0) {
+    const duplicateIds = this.findDuplicateIds(body.movements.map((m) => m.id));
+    if (duplicateIds.length > 0) {
       reasons.push({
         kind: 'DUPLICATE_IDS',
-        duplicateIds: uniqueDuplicateIds.sort((a, b) => a - b),
+        duplicateIds,
         message: `Opérations en double, à fusionner ou supprimer.`,
       });
     }
 
+    const balanceReasons = this.checkBalances(body.movements, body.balances);
+    reasons.push(...balanceReasons);
+
+    if (reasons.length > 0) return { valid: false, reasons };
+    return { valid: true };
+  }
+
+  private checkBalances(
+    movements: MovementDto[],
+    balances: BalanceDto[],
+  ): ValidationReasonDto[] {
+    const reasons: ValidationReasonDto[] = [];
     const sortedBalances = [...balances].sort(
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
@@ -32,28 +45,53 @@ export class MovementsService {
         .reduce((acc, m) => acc + m.amount, 0);
 
       if (!this.amountsEqual(sum, balance)) {
-        const difference = Math.round((sum - balance) * 100) / 100;
-        const roundedSum = Math.round(sum * 100) / 100;
+        const difference = this.roundToCents(sum - balance);
+        const roundedSum = this.roundToCents(sum);
         reasons.push({
           kind: 'BALANCE_MISMATCH',
           date,
           expectedBalance: balance,
           computedSum: roundedSum,
           difference,
-          message:
-            difference > 0
-              ? `Au ${date}: attendu ${balance}, calculé ${roundedSum} (écart +${difference}). Doublons ou opérations en trop.`
-              : `Au ${date}: attendu ${balance}, calculé ${roundedSum} (écart ${difference}). Opérations manquantes.`,
+          message: this.buildBalanceMismatchMessage(
+            date,
+            balance,
+            roundedSum,
+            difference,
+          ),
         });
       }
     }
-
-    if (reasons.length > 0) return { valid: false, reasons };
-    return { valid: true };
+    return reasons;
   }
 
-  // Binary floats (IEEE 754) cause small rounding errors on decimals.
+  private findDuplicateIds(ids: number[]): number[] {
+    const seen = new Set<number>();
+    const duplicates = new Set<number>();
+    for (const id of ids) {
+      if (seen.has(id)) duplicates.add(id);
+      else seen.add(id);
+    }
+    return [...duplicates].sort((a, b) => a - b);
+  }
+
+  private buildBalanceMismatchMessage(
+    date: string,
+    expectedBalance: number,
+    computedSum: number,
+    difference: number,
+  ): string {
+    const base = `Au ${date}: attendu ${expectedBalance}, calculé ${computedSum}`;
+    return difference > 0
+      ? `${base} (écart +${difference}). Doublons ou opérations en trop.`
+      : `${base} (écart ${difference}). Opérations manquantes.`;
+  }
+
   private amountsEqual(a: number, b: number): boolean {
     return Math.round(a * 100) === Math.round(b * 100);
+  }
+
+  private roundToCents(x: number): number {
+    return Math.round(x * 100) / 100;
   }
 }

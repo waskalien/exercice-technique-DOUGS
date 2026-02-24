@@ -35,3 +35,7 @@ export class AcceptedResponseDto {
   @ApiProperty({ example: 'Accepted' })
   message: string;
 }
+
+export type ValidationResult =
+  | { valid: true }
+  | { valid: false; reasons: ValidationReasonDto[] };

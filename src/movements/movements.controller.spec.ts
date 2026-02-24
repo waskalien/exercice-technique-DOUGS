@@ -1,5 +1,6 @@
 import { HttpException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import { anyValidBody, validMinimal } from '../../test/fixtures/movements';
 import { MovementsController } from './movements.controller';
 import { MovementsService } from './movements.service';
 
@@ -27,12 +28,7 @@ describe('MovementsController', () => {
   });
 
   it('should return 200 with message Accepted when validation succeeds', () => {
-    const body = {
-      movements: [
-        { id: 1, date: '2024-01-15', label: 'Opération', amount: 100 },
-      ],
-      balances: [{ date: '2024-01-31', balance: 1000 }],
-    };
+    const body = validMinimal();
     const result = controller.validate(body);
     expect(result).toEqual({ message: 'Accepted' });
     expect(validateMock).toHaveBeenCalledWith(body);
@@ -41,7 +37,7 @@ describe('MovementsController', () => {
   it('should throw 422 with message and reasons when validation fails', () => {
     const reasons = [
       {
-        kind: 'BALANCE_MISMATCH',
+        kind: 'BALANCE_MISMATCH' as const,
         date: '',
         expectedBalance: 0,
         computedSum: 0,
@@ -50,10 +46,7 @@ describe('MovementsController', () => {
       },
     ];
     validateMock.mockReturnValue({ valid: false, reasons });
-    const body = {
-      movements: [{ id: 1, date: '2024-01-10', label: 'X', amount: 0 }],
-      balances: [{ date: '2024-01-31', balance: 0 }],
-    };
+    const body = anyValidBody();
     let thrown: HttpException | null = null;
     try {
       controller.validate(body);
