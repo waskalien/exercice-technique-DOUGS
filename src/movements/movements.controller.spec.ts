@@ -54,24 +54,18 @@ describe('MovementsController', () => {
       movements: [{ id: 1, date: '2024-01-10', label: 'X', amount: 0 }],
       balances: [{ date: '2024-01-31', balance: 0 }],
     };
+    let thrown: HttpException | null = null;
     try {
       controller.validate(body);
-      throw new Error('Expected controller to throw HttpException');
-    } catch (e: unknown) {
-      if (
-        e instanceof Error &&
-        e.message === 'Expected controller to throw HttpException'
-      )
-        throw e;
-      expect(e).toBeInstanceOf(HttpException);
-      if (e instanceof HttpException) {
-        expect(e.getStatus()).toBe(422);
-        expect(e.getResponse()).toEqual({
-          message: 'Validation failed',
-          reasons,
-        });
-      }
+    } catch (e) {
+      thrown = e instanceof HttpException ? e : null;
     }
+    expect(thrown).toBeInstanceOf(HttpException);
+    expect(thrown!.getStatus()).toBe(422);
+    expect(thrown!.getResponse()).toEqual({
+      message: 'Validation failed',
+      reasons,
+    });
     expect(validateMock).toHaveBeenCalledWith(body);
   });
 });
