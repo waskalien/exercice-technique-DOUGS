@@ -9,10 +9,9 @@ export class MovementsController {
   @Post('validation')
   @HttpCode(HttpStatus.OK)
   validate(@Body() body: ValidateMovementsDto) {
-    const isValid = this.movementsService.validate(body);
-    return {
-      message: isValid ? 'Accepted' : 'Validation failed',
-      ...(isValid ? {} : { reasons: [] }),
-    };
+    const result = this.movementsService.validate(body);
+    return result.valid
+      ? { message: 'Accepted' }
+      : { message: 'Validation failed', reasons: result.reasons };
   }
 }

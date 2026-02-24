@@ -7,7 +7,7 @@ describe('MovementsController', () => {
   let validateMock: jest.Mock;
 
   beforeEach(async () => {
-    validateMock = jest.fn().mockReturnValue(true);
+    validateMock = jest.fn().mockReturnValue({ valid: true });
     const module: TestingModule = await Test.createTestingModule({
       controllers: [MovementsController],
       providers: [
@@ -38,15 +38,23 @@ describe('MovementsController', () => {
   });
 
   it('should return message and reasons when validation fails', () => {
-    validateMock.mockReturnValue(false);
+    const reasons = [
+      {
+        kind: 'BALANCE_MISMATCH',
+        date: '',
+        expectedBalance: 0,
+        computedSum: 0,
+        difference: 0,
+        message: '',
+      },
+    ];
+    validateMock.mockReturnValue({ valid: false, reasons });
     const body = {
-      movements: [],
-      balances: [],
+      movements: [{ id: 1, date: '2024-01-10', label: 'X', amount: 0 }],
+      balances: [{ date: '2024-01-31', balance: 0 }],
     };
     const result = controller.validate(body);
-    expect(result).toEqual({
-      message: 'Validation failed',
-      reasons: [],
-    });
+    expect(validateMock).toHaveBeenCalledWith(body);
+    expect(result).toEqual({ message: 'Validation failed', reasons });
   });
 });
