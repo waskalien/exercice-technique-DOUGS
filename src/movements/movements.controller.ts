@@ -1,4 +1,11 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpException,
+  HttpStatus,
+  Post,
+} from '@nestjs/common';
 import { ValidateMovementsDto } from './dto/validate-movements.dto';
 import { MovementsService } from './movements.service';
 
@@ -10,8 +17,12 @@ export class MovementsController {
   @HttpCode(HttpStatus.OK)
   validate(@Body() body: ValidateMovementsDto) {
     const result = this.movementsService.validate(body);
-    return result.valid
-      ? { message: 'Accepted' }
-      : { message: 'Validation failed', reasons: result.reasons };
+    if (!result.valid) {
+      throw new HttpException(
+        { message: 'Validation failed', reasons: result.reasons },
+        HttpStatus.UNPROCESSABLE_ENTITY,
+      );
+    }
+    return { message: 'Accepted' };
   }
 }
