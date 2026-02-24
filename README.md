@@ -22,6 +22,13 @@ yarn start:dev
 
 API sur `http://localhost:3000`
 
+## Documentation API
+
+Une documentation interactive de l’API est disponible via **Scalar** (à partir du même spec OpenAPI) :
+
+- **URL :** [http://localhost:3000/api](http://localhost:3000/api)
+- À afficher **après** avoir lancé l’app (`yarn start:dev`). Tu peux y voir les routes, les schémas et tester les appels.
+
 ## Route API
 
 - `POST /movements/validation` – Valider mouvements + points de contrôle
